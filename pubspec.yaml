@@ -30,6 +30,7 @@ dependencies:
   cupertino_icons: ^1.0.0
   path_provider: ^1.6.24
   permission_handler: ^5.0.1+1
+  video_player: ^1.0.1
 
 dev_dependencies:
   flutter_test:
