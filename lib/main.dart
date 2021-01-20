@@ -35,11 +35,18 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
-    super.initState();
+    _controller = VideoPlayerController.network(
+      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+    );
+    _initializeVideoPlayerFuture = _controller.initialize();
+    _controller.setLooping(true);
+    _controller.setVolume(4);
    
     getFilePath();
     super.initState();
   }
+
+
 
  @override
   void dispose() {
@@ -58,7 +65,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       loading = true;
     });
-    
     Directory appDocDir1 = await getExternalStorageDirectory();
     String appDocPath1 = appDocDir1.path;
     String path = appDocPath1.toString();
@@ -68,19 +74,21 @@ class _MyHomePageState extends State<MyHomePage> {
     var directory = new Directory(newdir);
     List<dynamic> thefile1 = directory.listSync();
     File newfile = thefile1[1];
-    var videos = thefile1.where((f) => f.path.endsWith('.mp4')).toList();
-    var jpgimage = thefile1.where((f) => f.path.endsWith('.jpg')).toList();
-    var pngimage = thefile1.where((f) => f.path.endsWith('.png')).toList();
-    var newvideo = videos[0];
+    List<FileSystemEntity> videos = thefile1.where((f) => f.path.endsWith('.mp4')).toList();
+    List<FileSystemEntity> jpgimage = thefile1.where((f) => f.path.endsWith('.jpg')).toList();
+    List<FileSystemEntity> pngimage = thefile1.where((f) => f.path.endsWith('.png')).toList();
+    File newvideo = videos[1];
     File myfile = File(newvideo.path);
-    print(myfile);
+    print(newvideo);
+    //print(videos);
 
     setState((){
       firstimage = newfile.path;    
       videoslist = videos;
       imageslist = jpgimage + pngimage;
-      _controller = VideoPlayerController.file(myfile);  
-      _initializeVideoPlayerFuture = _controller.initialize();
+      _controller = VideoPlayerController.file(File('/${newvideo.path}')); 
+      print('/${newvideo.path}'); 
+       _controller.initialize();
       _controller.setLooping(true);
       _controller.setVolume(1.0);
       _controller.play();
@@ -142,18 +150,18 @@ class _MyHomePageState extends State<MyHomePage> {
   }),
 ),
           Center(
-            //   child: AspectRatio(
-            //   aspectRatio: _controller.value.aspectRatio,
-            //   child: Stack(
-            //     alignment: Alignment.bottomCenter,
-            //     children: <Widget>[
-            //       VideoPlayer(_controller),
-            //       ClosedCaption(text: _controller.value.caption.text),
-            //       VideoProgressIndicator(_controller, allowScrubbing: true),
-            //     ],
-            //   ),
-            // ),
-          ),
+              child: AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: Stack(
+                alignment: Alignment.bottomCenter,
+                children: <Widget>[
+                  VideoPlayer(_controller),
+                  ClosedCaption(text: _controller.value.caption.text),
+                  VideoProgressIndicator(_controller),
+                ],
+              ),
+            ),
+          )
           
         ],
       ),
