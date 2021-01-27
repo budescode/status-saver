@@ -12,6 +12,13 @@ void main() {
   runApp(MyApp());
 }
 
+
+enum WhatsAppType {
+  OfficialWhatsApp,
+  GBWhatsApp,
+  BusinessWhatsApp,
+}
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -43,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    getFilePath();
+    getFilePath(WhatsAppType.BusinessWhatsApp);
     super.initState();
   }
 
@@ -51,7 +58,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<FileSystemEntity> imagesList;
   bool loading = true;
   bool emptyState = false;
-  Future<void> getFilePath() async {
+
+  Future<void> getFilePath(WhatsAppType whatsApp) async {
     await checkPermission();
     setState(() {
       loading = true;
@@ -61,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
     String path = appDocPath1.toString();
     var theIndex = path.indexOf('/Android/data/com.example.whatsappsave/files');
     var subStr = path.substring(1, theIndex);*/
-    var newDir = '/storage/emulated//0/WhatsApp Business/Media/.Statuses';
+    var newDir = '/storage/emulated//0/${whatAppType(whatsApp)}/Media/.Statuses';
     var directory = Directory(newDir);
     print(directory);
     print('${!directory.existsSync() ? 'NO' : 'YES'}');
@@ -98,6 +106,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+
+  String whatAppType (WhatsAppType type) {
+    if(type == WhatsAppType.GBWhatsApp) return 'GBWhatsApp';
+    if(type == WhatsAppType.BusinessWhatsApp) return 'WhatsApp Business';
+    return 'WhatsApp';
+  }
+
   checkPermission() async {
     var storageStatus = await Permission.storage.status;
     print(storageStatus);
@@ -124,6 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
               indicatorSize: TabBarIndicatorSize.label,
               indicatorWeight: 5,
+              indicatorColor: Colors.amber,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
@@ -132,11 +148,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             leading: CupertinoButton(
-              child: Icon(LineIcons.comment, color: Colors.white),
+              child: Icon(LineIcons.bars, color: Colors.white),
               onPressed: ()=> key.currentState.openDrawer(),
             ),
             excludeHeaderSemantics: true,
-            title: Text(widget.title),
+            title: Text(widget.title, style: GoogleFonts.montserrat()),
             actions: [
               IconButton(
                 icon: Icon(LineIcons.share, color: Colors.white),
@@ -176,6 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           crossAxisCount: 1,
                           physics: BouncingScrollPhysics(),
                           padding: EdgeInsets.zero,
+                          shrinkWrap: true,
                           children: List.generate(videosList.length, (index) {
                             return VideoItem(videosList[index].path);
                           }),
@@ -241,8 +258,10 @@ class VideoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 5),
-      decoration: BoxDecoration(),
+      margin: EdgeInsets.only(bottom: 5, left: 10, right: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10)
+      ),
       child: Stack(
         children: [
           // Container(color:Colors.red, height:200.0, width:200.0),
@@ -251,21 +270,20 @@ class VideoItem extends StatelessWidget {
               controller: ChewieController(
                 fullScreenByDefault: false,
                 autoInitialize: true,
-                errorBuilder: (context, errorMessage) {
-                  return Center(
-                    child: Text(
-                      errorMessage,
-                      style: TextStyle(
-                          color: Colors.white),
-                    ),
-                  );
-                },
+                errorBuilder: (context, errorMessage)=> Center(
+                  child: Text(
+                    errorMessage,
+                    style: TextStyle(
+                        color: Colors.white),
+                  ),
+                ),
                 videoPlayerController:
                 VideoPlayerController.file(
                   File(
                     '/$videoPath',
                   ),
                 ),
+                showControls: false,
                 aspectRatio: 1.1,
               ),
             ),
