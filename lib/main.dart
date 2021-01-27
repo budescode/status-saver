@@ -50,11 +50,13 @@ class _MyHomePageState extends State<MyHomePage> {
       loading = true;
     });
     Directory appDocDir1 = await getExternalStorageDirectory();
-    String appDocPath1 = appDocDir1.path;
-    String path = appDocPath1.toString();
-    var theindex = path.indexOf('/Android/data/com.example.whatsappsave/files');
-    var substr = path.substring(1, theindex);
-    var newdir = '$substr/WhatsApp/Media/.Statuses';
+    print(appDocDir1);
+    print('yeahahhhh');
+    // String appDocPath1 = appDocDir1.path;
+    // String path = appDocPath1.toString();
+    // var theindex = path.indexOf('/Android/data/com.example.whatsappsave/files');
+    // var substr = path.substring(1, theindex);
+    var newdir = '/storage/emulated/0//WhatsApp/Media/.Statuses';
     var directory = Directory(newdir);
     List<dynamic> thefile1 = directory.listSync();
     List<FileSystemEntity> videos = thefile1.where((f) => f.path.endsWith('.mp4')).toList();
