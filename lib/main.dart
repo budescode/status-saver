@@ -50,38 +50,42 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       loading = true;
     });
-    // Directory appDocDir1 = await getExternalStorageDirectory();
-    // String appDocPath1 = appDocDir1.path;
-    // String path = appDocPath1.toString();
-    // var theIndex = path.indexOf('/Android/data/com.example.whatsappsave/files');
-    // var subStr = path.substring(1, theIndex);
-    var newDir = '/storage/emulated/0//WhatsApp/Media/.Statuses';
+    /*Directory appDocDir1 = await getExternalStorageDirectory();
+    String appDocPath1 = appDocDir1.path;
+    String path = appDocPath1.toString();
+    var theIndex = path.indexOf('/Android/data/com.example.whatsappsave/files');
+    var subStr = path.substring(1, theIndex);*/
+    var newDir = '/storage/emulated//0/WhatsApp Business/Media/.Statuses';
     var directory = Directory(newDir);
+    print(directory);
+    print('${!directory.existsSync() ? 'NO' : 'YES'}');
+    print(directory.listSync().length);
 
     try {
       List<dynamic> theFile1 = directory.listSync();
       if (theFile1.isNotEmpty) {
         List<FileSystemEntity> videos =
-        theFile1.where((f) => f.path.endsWith('.mp4')).toList();
+            theFile1.where((f) => f.path.endsWith('.mp4')).toList();
         List<FileSystemEntity> videos1 =
-        theFile1.where((f) => f.path.endsWith('.gif')).toList();
+            theFile1.where((f) => f.path.endsWith('.gif')).toList();
         List<FileSystemEntity> jpgImage =
-        theFile1.where((f) => f.path.endsWith('.jpg')).toList();
+            theFile1.where((f) => f.path.endsWith('.jpg')).toList();
         List<FileSystemEntity> pngImage =
-        theFile1.where((f) => f.path.endsWith('.png')).toList();
+            theFile1.where((f) => f.path.endsWith('.png')).toList();
         setState(() {
           videosList = videos + videos1;
           imagesList = jpgImage + pngImage;
           loading = false;
         });
       } else {
-        setState((){
+        setState(() {
           emptyState = true;
           loading = false;
         });
       }
-    } catch (e){
-      setState((){
+    } catch (e) {
+      print(e);
+      setState(() {
         emptyState = true;
         loading = false;
       });
@@ -91,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
   checkPermission() async {
     var storageStatus = await Permission.storage.status;
     print(storageStatus);
-    if (storageStatus.isDenied) {
+    if (!storageStatus.isGranted) {
       await Permission.storage.request();
     }
     print(storageStatus);
@@ -159,7 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Center(child: Text('No Content')),
                         )
                       : GridView.count(
-                          crossAxisCount: 2,
+                          crossAxisCount: 1,
                           children: List.generate(videosList.length, (index) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 5.0),
@@ -185,8 +189,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                             );
                                           },
                                           videoPlayerController:
-                                              VideoPlayerController.file(File(
-                                                  '/${videosList[index].path}')),
+                                              VideoPlayerController.file(
+                                            File(
+                                              '/${videosList[index].path}',
+                                            ),
+                                          ),
+                                          aspectRatio: 1.1,
                                         ),
                                       ),
                                     ),
