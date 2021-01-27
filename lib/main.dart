@@ -1,3 +1,4 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
@@ -25,7 +26,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
-
+  Future userFuture;
   final String title;
 
   @override
@@ -45,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
     getFilePath();
     super.initState();
   }
-
+  
 
 
  @override
@@ -75,19 +76,20 @@ class _MyHomePageState extends State<MyHomePage> {
     List<dynamic> thefile1 = directory.listSync();
     File newfile = thefile1[1];
     List<FileSystemEntity> videos = thefile1.where((f) => f.path.endsWith('.mp4')).toList();
+    List<FileSystemEntity> videos1 = thefile1.where((f) => f.path.endsWith('.gif')).toList();
     List<FileSystemEntity> jpgimage = thefile1.where((f) => f.path.endsWith('.jpg')).toList();
     List<FileSystemEntity> pngimage = thefile1.where((f) => f.path.endsWith('.png')).toList();
-    File newvideo = videos[1];
-    File myfile = File(newvideo.path);
-    print(newvideo);
+    // File newvideo = videos[1];
+    // File myfile = File(newvideo.path);
+    // print(newvideo);
     //print(videos);
 
     setState((){
       firstimage = newfile.path;    
-      videoslist = videos;
+      videoslist = videos + videos1;
       imageslist = jpgimage + pngimage;
-      _controller = VideoPlayerController.file(File('/${newvideo.path}')); 
-      print('/${newvideo.path}'); 
+      // _controller = VideoPlayerController.file(File('/${newvideo.path}')); 
+      // print('/${newvideo.path}'); 
        _controller.initialize();
       _controller.setLooping(true);
       _controller.setVolume(1.0);
@@ -108,6 +110,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+       var size = MediaQuery.of(context).size;
+
+    /*24 is for notification bar on Android*/
+    final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
+    final double itemWidth = size.width / 2;
   return DefaultTabController(
   length: 2,
   child: MaterialApp(
@@ -132,37 +139,62 @@ class _MyHomePageState extends State<MyHomePage> {
       drawer: Drawer(),
       body: TabBarView(
         children: [
-                      loading ?CircularProgressIndicator() : GridView.count(
-  crossAxisCount: 2 ,
-  children: List.generate(imageslist.length,(index){
-    return Padding(
-      padding: const EdgeInsets.only(bottom:5.0),
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(       
-                  image: DecorationImage(
+      loading ?CircularProgressIndicator() : GridView.count(
+        crossAxisCount: 2 ,
+        children: List.generate(imageslist.length,(index){
+          return Padding(
+            padding: const EdgeInsets.only(bottom:5.0),
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(       
+                        image: DecorationImage(
+                        fit:BoxFit.cover,
                         image: FileImage(File(imageslist[index].path))
-           )
-      )
-        // child: Text('yayaya')
-      ),
-    );
-  }),
-),
-          Center(
-              child: AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                children: <Widget>[
-                  VideoPlayer(_controller),
-                  ClosedCaption(text: _controller.value.caption.text),
-                  VideoProgressIndicator(_controller),
-                ],
-              ),
+                )
+            )
+              // child: Text('yayaya')
             ),
-          )
-          
+          );
+        }),
+      ),
+
+      loading ?CircularProgressIndicator() : GridView.count(
+        crossAxisCount: 2 ,
+
+        children: List.generate(videoslist.length,(index){
+          return Padding(
+            padding: const EdgeInsets.only(bottom:5.0),
+            child: Container(
+              height: 20,
+              width: 20,
+            child: Stack( 
+              children: [
+                // Container(color:Colors.red, height:200.0, width:200.0),
+                Positioned.fill(
+                  child: Chewie(
+                    controller: ChewieController(                        
+                   fullScreenByDefault: false,
+                   autoInitialize : true,
+                     errorBuilder: (context, errorMessage) {
+                     return Center(
+                     child: Text(
+                     errorMessage,
+                     style: TextStyle(color: Colors.white),
+                     ),
+                     );
+                   },
+                   videoPlayerController:
+                    VideoPlayerController.file(File('/${videoslist[index].path}')),
+                ),
+                ),
+                ),          
+                
+              ],
+            ),
+              ),
+          );
+        }),
+      ),
         ],
       ),
     ),
