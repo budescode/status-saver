@@ -1,10 +1,12 @@
 import 'package:chewie/chewie.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
+import 'package:line_icons/line_icons.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,12 +16,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'WhatsApp Saver',
+      title: 'WhatsApp Status Saver',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        textTheme: GoogleFonts.montserratAlternatesTextTheme()
       ),
-      home: MyHomePage(title: 'WhatsApp Saver'),
+      home: MyHomePage(title: 'WhatsApp Status Saver'),
     );
   }
 }
@@ -35,6 +38,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  final key = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     getFilePath();
@@ -107,22 +113,37 @@ class _MyHomePageState extends State<MyHomePage> {
       length: 2,
       child: MaterialApp(
         home: Scaffold(
+          key: key,
+          backgroundColor: Colors.white,
           appBar: AppBar(
             bottom: TabBar(
               onTap: (index) {},
               tabs: [
-                Tab(icon: Icon(Icons.image)),
-                Tab(icon: Icon(Icons.video_library)),
+                Tab(icon: Icon(LineIcons.image)),
+                Tab(icon: Icon(LineIcons.video_camera)),
               ],
+              indicatorSize: TabBarIndicatorSize.label,
+              indicatorWeight: 5,
             ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            leading: CupertinoButton(
+              child: Icon(LineIcons.comment, color: Colors.white),
+              onPressed: ()=> key.currentState.openDrawer(),
+            ),
+            excludeHeaderSemantics: true,
             title: Text(widget.title),
             actions: [
               IconButton(
-                icon: Icon(Icons.share, color: Colors.white),
+                icon: Icon(LineIcons.share, color: Colors.white),
                 onPressed: null,
               ),
               IconButton(
-                icon: Icon(Icons.help, color: Colors.white),
+                icon: Icon(LineIcons.question_circle, color: Colors.white),
                 onPressed: null,
               ),
             ],
@@ -134,74 +155,29 @@ class _MyHomePageState extends State<MyHomePage> {
               loading
                   ? Center(child: CircularProgressIndicator())
                   : emptyState
-                      ? Container(
-                          child: Center(child: Text('No Content')),
-                        )
+                      ? _EmptyView()
                       : GridView.count(
                           crossAxisCount: 2,
+                          mainAxisSpacing: 5,
+                          crossAxisSpacing: 5,
+                          childAspectRatio: 0.8,
+                          physics: BouncingScrollPhysics(),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
                           children: List.generate(imagesList.length, (index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 5.0),
-                              child: Container(
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  image: DecorationImage(
-                                    fit: BoxFit.cover,
-                                    image: FileImage(
-                                      File(imagesList[index].path),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
+                            return _ImageItem(imagesList[index].path);
                           }),
                         ),
               loading
                   ? Center(child: CircularProgressIndicator())
                   : emptyState
-                      ? Container(
-                          child: Center(child: Text('No Content')),
-                        )
+                      ? _EmptyView()
                       : GridView.count(
                           crossAxisCount: 1,
+                          physics: BouncingScrollPhysics(),
+                          padding: EdgeInsets.zero,
                           children: List.generate(videosList.length, (index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 5.0),
-                              child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Stack(
-                                  children: [
-                                    // Container(color:Colors.red, height:200.0, width:200.0),
-                                    Positioned.fill(
-                                      child: Chewie(
-                                        controller: ChewieController(
-                                          fullScreenByDefault: false,
-                                          autoInitialize: true,
-                                          errorBuilder:
-                                              (context, errorMessage) {
-                                            return Center(
-                                              child: Text(
-                                                errorMessage,
-                                                style: TextStyle(
-                                                    color: Colors.white),
-                                              ),
-                                            );
-                                          },
-                                          videoPlayerController:
-                                              VideoPlayerController.file(
-                                            File(
-                                              '/${videosList[index].path}',
-                                            ),
-                                          ),
-                                          aspectRatio: 1.1,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                            return VideoItem(videosList[index].path);
                           }),
                         ),
             ],
@@ -211,3 +187,101 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+class _ImageViewer extends StatelessWidget {
+  final File image;
+  _ImageViewer(this.image);
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black45,
+      body: Center(
+        child: Hero(
+          tag: image.path,
+          child: Image.file(image, fit: BoxFit.cover),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageItem extends StatelessWidget {
+  final String image;
+  _ImageItem(this.image);
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _ImageViewer(
+            File(image),
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.zero,
+        child: Container(
+          decoration: BoxDecoration(
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                image: FileImage(
+                  File(image),
+                ),
+              ),
+              borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
+    );
+  }
+}
+
+class VideoItem extends StatelessWidget {
+  final String videoPath;
+  VideoItem(this.videoPath);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 5),
+      decoration: BoxDecoration(),
+      child: Stack(
+        children: [
+          // Container(color:Colors.red, height:200.0, width:200.0),
+          Positioned.fill(
+            child: Chewie(
+              controller: ChewieController(
+                fullScreenByDefault: false,
+                autoInitialize: true,
+                errorBuilder: (context, errorMessage) {
+                  return Center(
+                    child: Text(
+                      errorMessage,
+                      style: TextStyle(
+                          color: Colors.white),
+                    ),
+                  );
+                },
+                videoPlayerController:
+                VideoPlayerController.file(
+                  File(
+                    '/$videoPath',
+                  ),
+                ),
+                aspectRatio: 1.1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(child: Text('No Content')),
+    );
+  }
+}
+
