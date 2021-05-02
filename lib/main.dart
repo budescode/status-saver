@@ -1,12 +1,19 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:whatsappsave/videolist.dart';
+import 'package:whatsappsave/videoplay.dart';
+import 'imageview.dart';
+//import 'package:floating_action_bubble/floating_action_bubble.dart';
+import 'package:flutter_share_me/flutter_share_me.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,6 +24,7 @@ enum WhatsAppType {
   OfficialWhatsApp,
   GBWhatsApp,
   BusinessWhatsApp,
+  WhatsApp
 }
 
 class MyApp extends StatelessWidget {
@@ -50,9 +58,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    getFilePath(WhatsAppType.BusinessWhatsApp);
+    getTemporaryDirectory().then((d) => _tempDir = d.path);
+    getFilePath(WhatsAppType.OfficialWhatsApp);
     super.initState();
   }
+
+  String _tempDir;
+  
+  List <GenThumbnailImage> finalvideos;
+   ImageFormat _format = ImageFormat.JPEG;
+  int _quality = 50;
+  int _sizeH = 0;
+  int _sizeW = 0;
+  int _timeMs = 0;
+
 
   List<FileSystemEntity> videosList;
   List<FileSystemEntity> imagesList;
@@ -64,11 +83,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       loading = true;
     });
-    /*Directory appDocDir1 = await getExternalStorageDirectory();
-    String appDocPath1 = appDocDir1.path;
-    String path = appDocPath1.toString();
-    var theIndex = path.indexOf('/Android/data/com.example.whatsappsave/files');
-    var subStr = path.substring(1, theIndex);*/
     var newDir = '/storage/emulated//0/${whatAppType(whatsApp)}/Media/.Statuses';
     var directory = Directory(newDir);
     print(directory);
@@ -77,6 +91,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     try {
       List<dynamic> theFile1 = directory.listSync();
+      theFile1.sort((a,b) => File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync()));
+      // print(theFile1[0]);
       if (theFile1.isNotEmpty) {
         List<FileSystemEntity> videos =
             theFile1.where((f) => f.path.endsWith('.mp4')).toList();
@@ -86,7 +102,36 @@ class _MyHomePageState extends State<MyHomePage> {
             theFile1.where((f) => f.path.endsWith('.jpg')).toList();
         List<FileSystemEntity> pngImage =
             theFile1.where((f) => f.path.endsWith('.png')).toList();
+
+              var newfile = videos[1];
+              print(newfile);
+              print('newwwwwwwwwwwwwwwww');
+              var  _futreImage1 = GenThumbnailImage(
+              thumbnailRequest: ThumbnailRequest(
+              video: newfile.path,
+              thumbnailPath: _tempDir,
+              imageFormat: _format,
+              maxHeight: _sizeH,
+              maxWidth: _sizeW,
+              timeMs: _timeMs,
+              quality: _quality));
+              List finalvideos1 = videos.map((e) =>               
+              GenThumbnailImage(
+              thumbnailRequest: ThumbnailRequest(
+              video: e.path,
+              thumbnailPath: _tempDir,
+              imageFormat: _format,
+              maxHeight: _sizeH,
+              maxWidth: _sizeW,
+              timeMs: _timeMs,
+              quality: _quality))
+              ).toList();
+                         
+                           
+                         
         setState(() {
+          
+           finalvideos = finalvideos1;
           videosList = videos + videos1;
           imagesList = jpgImage + pngImage;
           loading = false;
@@ -172,31 +217,49 @@ class _MyHomePageState extends State<MyHomePage> {
                   ? Center(child: CircularProgressIndicator())
                   : emptyState
                       ? _EmptyView()
-                      : GridView.count(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 5,
-                          crossAxisSpacing: 5,
-                          childAspectRatio: 0.8,
-                          physics: BouncingScrollPhysics(),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 10),
-                          children: List.generate(imagesList.length, (index) {
-                            return _ImageItem(imagesList[index].path);
-                          }),
-                        ),
+                      : RefreshIndicator(
+                            onRefresh: () async {
+                              
+                              getFilePath(WhatsAppType.WhatsApp);
+                            },
+                            child: GridView.count(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 5,
+                            crossAxisSpacing: 5,
+                            childAspectRatio: 0.8,
+                            physics: BouncingScrollPhysics(),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 10),
+                            children: List.generate(imagesList.length, (index) {
+                              return _ImageItem(imagesList[index].path);
+                            }),
+                          ),
+                      ),
               loading
                   ? Center(child: CircularProgressIndicator())
                   : emptyState
-                      ? _EmptyView()
-                      : GridView.count(
-                          crossAxisCount: 1,
+                      ? _EmptyView():
+     
+                      GridView.count(
+                          crossAxisCount: 2,
                           physics: BouncingScrollPhysics(),
                           padding: EdgeInsets.zero,
                           shrinkWrap: true,
-                          children: List.generate(videosList.length, (index) {
-                            return VideoItem(videosList[index].path);
+                          addAutomaticKeepAlives: true,
+                          children: List.generate(finalvideos.length, (index) {
+                            return (finalvideos != null) ? GestureDetector(
+                              onTap: (){
+                                print(finalvideos[index].thumbnailRequest.video);
+                                  Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                  builder: (context) => VideoItem(finalvideos[index].thumbnailRequest.video.toString()),
+                                  ));
+                              },
+                              child: finalvideos[index]) : Text('Loading...');
                           }),
                         ),
+                      
             ],
           ),
         ),
@@ -205,22 +268,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class _ImageViewer extends StatelessWidget {
-  final File image;
-  _ImageViewer(this.image);
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black45,
-      body: Center(
-        child: Hero(
-          tag: image.path,
-          child: Image.file(image, fit: BoxFit.cover),
-        ),
-      ),
-    );
-  }
-}
 
 class _ImageItem extends StatelessWidget {
   final String image;
@@ -230,7 +277,7 @@ class _ImageItem extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => _ImageViewer(
+          builder: (_) => ImageViewer(
             File(image),
           ),
         ),
@@ -248,51 +295,12 @@ class _ImageItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(10)),
         ),
       ),
+      
     );
   }
 }
 
-class VideoItem extends StatelessWidget {
-  final String videoPath;
-  VideoItem(this.videoPath);
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 5, left: 10, right: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10)
-      ),
-      child: Stack(
-        children: [
-          // Container(color:Colors.red, height:200.0, width:200.0),
-          Positioned.fill(
-            child: Chewie(
-              controller: ChewieController(
-                fullScreenByDefault: false,
-                autoInitialize: true,
-                errorBuilder: (context, errorMessage)=> Center(
-                  child: Text(
-                    errorMessage,
-                    style: TextStyle(
-                        color: Colors.white),
-                  ),
-                ),
-                videoPlayerController:
-                VideoPlayerController.file(
-                  File(
-                    '/$videoPath',
-                  ),
-                ),
-                showControls: false,
-                aspectRatio: 1.1,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+
 
 class _EmptyView extends StatelessWidget {
   @override
