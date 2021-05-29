@@ -1,12 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share/share.dart';
-import 'main.dart';
+
 
 
 class ImageViewer extends StatefulWidget {
@@ -46,7 +44,7 @@ class _ImageViewerState extends State<ImageViewer> with SingleTickerProviderStat
     Fluttertoast.showToast(
         msg: themsg,
         toastLength: Toast.LENGTH_SHORT,
-        backgroundColor: Colors.green,
+        backgroundColor: Color.fromRGBO(14, 169, 14, 1),
         textColor: Colors.white);
   }
   List<FileSystemEntity> videosList;
@@ -75,7 +73,7 @@ class _ImageViewerState extends State<ImageViewer> with SingleTickerProviderStat
                             onTap: () async {
                               await checkPermission();
                               Directory appDocDirectory = await getExternalStorageDirectory();
-                              String thepath2 = appDocDirectory.parent.parent.parent.parent.path.toString() + '/Whatsappsave';
+                              String thepath2 = appDocDirectory.parent.parent.parent.parent.path.toString() + '/Whatsappsaver';
                               int indexname = widget.image.toString().indexOf('.Statuses/');
                               String name = widget.image.toString().substring(indexname+10);
                               String finalname='';
@@ -83,7 +81,7 @@ class _ImageViewerState extends State<ImageViewer> with SingleTickerProviderStat
                               {
                                  finalname = thepath2 +'/'+ name,
                                 await widget.image.copy('$thepath2/$name.jpg'),
-                                print(finalname)
+                                
                               }
                               );
                               Navigator.pop(context);
@@ -98,29 +96,30 @@ class _ImageViewerState extends State<ImageViewer> with SingleTickerProviderStat
                               Navigator.pop(context);
                             },
                           ),
-                          ListTile(
-                            leading: new Icon(Icons.send_rounded),
-                            title: new Text('Repost'),
-                            onTap: () async {
-                              List<int> imageBytes = await widget.image.readAsBytes();
-                              String base64Image = base64Encode(imageBytes);
-                              print(imageBytes);
-                              await FlutterShareMe().shareToWhatsApp(base64Image: base64Image);
+                          // ListTile(
+                          //   leading: new Icon(Icons.send_rounded),
+                          //   title: new Text('Repost'),
+                          //   onTap: () async {
+                          //     List<int> imageBytes = await widget.image.readAsBytes();
+                          //     String base64Image = base64Encode(imageBytes);
+                          //     print(imageBytes);
+                          //     FlutterShareMe().shareToWhatsApp(base64Image: base64Image);
                               
-                              // Navigator.pop(context);
-                            },
-                          ),
+                          //     // Navigator.pop(context);
+                          //   },
+                          // ),
                           ListTile(
                             leading: new Icon(Icons.delete_forever_outlined),
                             title: new Text('Delete'),
                             onTap: () {
                                   widget.image.delete();
                                   showToast('Deleted!');
-                                  Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                  builder: (context) => MyHomePage(title:'WhatsApp Status Saver'),
-                                  ));
+                                  Navigator.pop(context);
+                                  // Navigator.pushReplacement(
+                                  // context,
+                                  // MaterialPageRoute(
+                                  // builder: (context) => MyHomePage(title:'WhatsApp Status Saver'),
+                                  // ));
                             },
                           ),
 
@@ -130,7 +129,7 @@ class _ImageViewerState extends State<ImageViewer> with SingleTickerProviderStat
 
         },
         child: const Icon(Icons.add),
-        backgroundColor: Colors.green,
+        backgroundColor: Color.fromRGBO(14, 169, 14, 1),
       ),
 
 

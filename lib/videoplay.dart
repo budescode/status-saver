@@ -1,23 +1,26 @@
-import 'dart:convert';
-
 import 'package:chewie/chewie.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:line_icons/line_icons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share/share.dart';
 import 'dart:io';
 import 'package:video_player/video_player.dart';
-import 'package:whatsappsave/main.dart';
+import 'package:whatsappsaver/drawer.dart';
+import 'package:whatsappsaver/models/model.dart';
 
-class VideoItem extends StatelessWidget {
-  final String videoPath;
-  VideoItem(this.videoPath);
+class VideoItem extends StatefulWidget {
+  
+  final FileModel fileModel;
+  VideoItem(this.fileModel);
 
+  @override
+  _VideoItemState createState() => _VideoItemState();
+}
+
+class _VideoItemState extends State<VideoItem> {
   checkPermission() async {
     var storageStatus = await Permission.storage.status;
     if (storageStatus != true){
@@ -29,9 +32,40 @@ class VideoItem extends StatelessWidget {
     Fluttertoast.showToast(
         msg: themsg,
         toastLength: Toast.LENGTH_SHORT,
-        backgroundColor: Colors.green,
+        backgroundColor: Color.fromRGBO(14, 169, 14, 1),
         textColor: Colors.white);
   }
+  @override
+  void initState(){     
+_controller = ChewieController(
+              autoPlay: true,
+              fullScreenByDefault: false,
+              autoInitialize: true,
+              errorBuilder: (context, errorMessage) => Center(
+                child: Text(
+                  errorMessage,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              videoPlayerController: VideoPlayerController.file(
+                File(
+                  '/${widget.fileModel.fileUrl.path}',
+                ),
+              ),
+              showControls: true,
+              // aspectRatio: 16 / 9,
+            );
+
+    super.initState();
+  }
+ChewieController _controller;
+
+  @override
+  void dispose() {
+    _controller.pause();
+    _controller.dispose();
+    super.dispose();
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -40,42 +74,22 @@ class VideoItem extends StatelessWidget {
         backgroundColor: Colors.black,
         appBar: AppBar(
           title: Text('Video', style: GoogleFonts.montserrat()),
-          // actions: [
-          //   IconButton(
-          //     icon: Icon(LineIcons.share, color: Colors.white),
-          //     onPressed: null,
-          //   ),
-          //   IconButton(
-          //     icon: Icon(LineIcons.question_circle, color: Colors.white),
-          //     onPressed: null,
-          //   ),
-          // ],
-          backgroundColor: Color.fromRGBO(18, 140, 126, 1),
+          actions: [
+            // IconButton(
+            //   icon: Icon(LineIcons.share, color: Colors.white),
+            //   onPressed: null,
+            // ),
+            // IconButton(
+            //   icon: Icon(LineIcons.question_circle, color: Colors.white),
+            //   onPressed: null,
+            // ),
+          ],
+          backgroundColor: Color.fromRGBO(14, 169, 14, 1),
         ),
-        drawer: Drawer(),
+        drawer: myDrawer(context),
         body: Center(
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Chewie(
-              controller: ChewieController(
-                autoPlay: true,
-                fullScreenByDefault: false,
-                autoInitialize: true,
-                errorBuilder: (context, errorMessage) => Center(
-                  child: Text(
-                    errorMessage,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                videoPlayerController: VideoPlayerController.file(
-                  File(
-                    '/$videoPath',
-                  ),
-                ),
-                showControls: true,
-                aspectRatio: 16 / 9,
-              ),
-            ),
+          child: Chewie(
+            controller: _controller
           ),
         ),
               floatingActionButton: FloatingActionButton(
@@ -92,9 +106,9 @@ class VideoItem extends StatelessWidget {
                             onTap: () async {
                               await checkPermission();
                               Directory appDocDirectory = await getExternalStorageDirectory();
-                              String thepath2 = appDocDirectory.parent.parent.parent.parent.path.toString() + '/Whatsappsave';
-                              String video = this.videoPath;      
-                              File videofile = File(this.videoPath);  
+                              String thepath2 = appDocDirectory.parent.parent.parent.parent.path.toString() + '/Whatsappsaver';
+                              String video = this.widget.fileModel.fileUrl.path;      
+                              File videofile = File(this.widget.fileModel.fileUrl.path);  
                               int indexname = video.indexOf('.Statuses/');
                               String name = video.substring(indexname+10);
                               String finalname='';
@@ -102,7 +116,7 @@ class VideoItem extends StatelessWidget {
                               {
                                  finalname = thepath2 +'/'+ name,
                                 await videofile.copy('$thepath2/$name.mp4'),
-                                print(finalname)
+                                
                               }
                               );
                               Navigator.pop(context);
@@ -113,36 +127,32 @@ class VideoItem extends StatelessWidget {
                             leading: new Icon(Icons.share),
                             title: new Text('Share'),
                             onTap: () {                                  
-                              File videofile = File(this.videoPath); 
+                              File videofile = File(this.widget.fileModel.fileUrl.path); 
                               Share.shareFiles([videofile.path.toString()], text: '');
                               Navigator.pop(context);
                             },
                           ),
-                          ListTile(
-                            leading: new Icon(Icons.send_rounded),
-                            title: new Text('Repost'),
-                            onTap: () async {
-                              File videofile = File(this.videoPath); 
-                              List<int> imageBytes = await videofile.readAsBytes();
-                              String base64Image = base64Encode(imageBytes);
-                              print(imageBytes);
-                              await FlutterShareMe().shareToWhatsApp(base64Image: base64Image);
+                          // ListTile(
+                          //   leading: new Icon(Icons.send_rounded),
+                          //   title: new Text('Repost'),
+                          //   onTap: () async {
+                          //     File videofile = File(this.widget.videoPath); 
+                          //     List<int> imageBytes = await videofile.readAsBytes();
+                          //     String base64Image = base64Encode(imageBytes);
+                          //     print(imageBytes);
+                          //     await FlutterShareMe().shareToWhatsApp(base64Image: base64Image);
                               
-                              Navigator.pop(context);
-                            },
-                          ),
+                          //     Navigator.pop(context);
+                          //   },
+                          // ),
                           ListTile(
                             leading: new Icon(Icons.delete_forever_outlined),
                             title: new Text('Delete'),
                             onTap: () {                                  
-                                  File videofile = File(this.videoPath); 
+                                  File videofile = File(this.widget.fileModel.fileUrl.path); 
                                   videofile.delete();
                                   showToast('Deleted!');
-                                  Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                  builder: (context) => MyHomePage(title:'WhatsApp Status Saver'),
-                                  ));
+                                  Navigator.pop(context);
                             },
                           ),
 
@@ -152,7 +162,7 @@ class VideoItem extends StatelessWidget {
 
         },
         child: const Icon(Icons.add),
-        backgroundColor: Colors.green,
+        backgroundColor: Color.fromRGBO(14, 169, 14, 1),
       ),
 
       ),

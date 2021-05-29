@@ -5,9 +5,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:whatsappsaver/main.dart';
+import 'package:whatsappsaver/models/model.dart';
+import 'package:whatsappsaver/provider/provider.dart';
+import 'package:whatsappsaver/videoplay.dart';
 
 
 class ThumbnailRequest {
@@ -51,7 +56,7 @@ Future<ThumbnailResult> genThumbnail(ThumbnailRequest r) async {
         timeMs: r.timeMs,
         quality: r.quality);
 
-    print("thumbnail file is located: $thumbnailPath");
+    // print("thumbnail file is located: $thumbnailPath");
 
     final file = File(thumbnailPath);
     bytes = file.readAsBytesSync();
@@ -66,7 +71,7 @@ Future<ThumbnailResult> genThumbnail(ThumbnailRequest r) async {
   }
 
   int _imageDataSize = bytes.length;
-  print("image size: $_imageDataSize");
+  // print("image size: $_imageDataSize");
 
   final _image = Image.memory(bytes);
   _image.image
@@ -84,21 +89,46 @@ Future<ThumbnailResult> genThumbnail(ThumbnailRequest r) async {
 
 class GenThumbnailImage extends StatefulWidget {
   final ThumbnailRequest thumbnailRequest;
+  final FileModel fileModel;
 
-  const GenThumbnailImage({Key key, this.thumbnailRequest}) : super(key: key);
+  const GenThumbnailImage({Key key, this.thumbnailRequest, this.fileModel}) : super(key: key);
 
   @override
   _GenThumbnailImageState createState() => _GenThumbnailImageState();
 }
 
 class _GenThumbnailImageState extends State<GenThumbnailImage> {
+  
+  @override
+  void dispose() {
+    getIt<SaverProvider>().updateimagefilesSaved([], 'image');
+    super.dispose();
+    }
+
+saveData(SaverProvider saverProvider, FileModel file)async { // add data to file to be saved   
+  List<FileModel> file1 = saverProvider.imagefilesSaved;  
+  file1.add(file);
+  getIt<SaverProvider>().updateimagefilesSaved(file1, 'image'); 
+  print(saverProvider.imagefilesSaved);
+}
+
+removeData(SaverProvider saverProvider, FileModel file)async { //remove data from file to be saved   
+  List<FileModel> file1 = saverProvider.imagefilesSaved;  
+  file1.remove(file);
+   getIt<SaverProvider>().updateimagefilesSaved(file1, 'image'); 
+  print(saverProvider.imagefilesSaved);  
+}
+  
   @override
   Widget build(BuildContext context) {
+    SaverProvider saverProvider = Provider.of<SaverProvider>(context);
     return FutureBuilder<ThumbnailResult>(
       future: genThumbnail(widget.thumbnailRequest),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
+         
           final _image = snapshot.data.image;
+
           final _width = snapshot.data.width;
           final _height = snapshot.data.height;
           final _dataSize = snapshot.data.dataSize;
@@ -106,11 +136,72 @@ class _GenThumbnailImageState extends State<GenThumbnailImage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Container(
-                color: Colors.grey,
-                height: 1.0,
+              Stack(
+                children: [
+                Positioned(
+                child: Stack(children: <Widget>[
+                  GestureDetector(
+      onLongPress:() async {        
+        if(widget.fileModel.hold == false){
+          await saveData(saverProvider, widget.fileModel);
+        setState(() {
+          widget.fileModel.hold = true ;
+        });
+        }else{
+         await removeData(saverProvider, widget.fileModel);
+        setState(() {
+          widget.fileModel.hold = false ;
+        });
+        }
+      },
+      onTap: () async {
+      if(saverProvider.imagefilesSaved.isEmpty == true){
+        Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => VideoItem(widget.fileModel),
+            ),
+          );
+      }else{
+        if(widget.fileModel.hold == false){
+          //await saveData(saverProvider, widget.fileModel);
+        setState(() {
+          widget.fileModel.hold = true ;
+        });
+        }else{
+         // await removeData(saverProvider, widget.fileModel);
+        setState(() {
+          widget.fileModel.hold = false ;
+        });
+        }
+      }
+      },
+                              // onTap: (){                                
+                              //     Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //     builder: (context) => 
+                              //     VideoItem(saverProvider.fileModelVideoList[index]),
+                              //     ));
+                              // },
+                    child: _image
+                  ),
+
+               widget.fileModel.hold ? Container(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    color: Color.fromRGBO(124,252,0,.4)
+                  ): SizedBox(),
+                  
+                ],),
+                ),
+                  Positioned(
+                left: MediaQuery.of(context).size.width/5,
+                top: MediaQuery.of(context).size.height/12,
+                child: Icon(Icons.play_arrow_rounded, size: 60, color: Colors.white),
+                )
+                ],
               ),
-              _image,
+              
             ],
           );
         } else if (snapshot.hasError) {
