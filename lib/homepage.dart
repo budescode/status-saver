@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:whatsappsaver/drawer.dart';
@@ -13,11 +12,8 @@ import 'package:whatsappsaver/main.dart';
 import 'package:whatsappsaver/models/model.dart';
 import 'package:whatsappsaver/provider/provider.dart';
 import 'package:whatsappsaver/utils.dart';
-import 'package:whatsappsaver/videolist.dart';
 import 'package:whatsappsaver/videoplay.dart';
 import 'imageview.dart';
-//import 'package:floating_action_bubble/floating_action_bubble.dart';
-import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 
@@ -44,17 +40,18 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
+
+Future getThumbnail(String str) async {
+  final uint8list = await VideoThumbnail.thumbnailData(
+  video: str,
+  imageFormat: ImageFormat.JPEG,
+  maxWidth: 128, // specify the width of the thumbnail, let the height auto-scaled to keep the source aspect ratio
+  quality: 25,
+  );
+  return uint8list;
+  }
   String _tempDir;
   
-  List <GenThumbnailImage> finalvideos;
-   ImageFormat _format = ImageFormat.JPEG;
-  int _quality = 50;
-  int _sizeH = 0;
-  int _sizeW = 0;
-  int _timeMs = 0;
-
-
-  // List<FileSystemEntity> videosList;
   List<FileModel> imagesList;
   List<FileModel> videoList;
   bool loading = true;
@@ -72,11 +69,6 @@ class _MyHomePageState extends State<MyHomePage> {
       List<FileSystemEntity> theFile1 = directory.listSync();
       theFile1.sort((a,b) => File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync()));
        List<FileModel> filelist = theFile1.map((data)=> FileModel(fileUrl:File(data.path), hold:false)).toList();
-
-       
-        // fileModelImageList =  filelist;
-    //   // //print(filelist[0].fileUrl);
-    //  print(filelist[0].fileUrl);
       
       if (theFile1.isNotEmpty) {
         List<FileModel> videos =
@@ -87,24 +79,14 @@ class _MyHomePageState extends State<MyHomePage> {
             filelist.where((f) => f.fileUrl.path.endsWith('.jpg')).toList();
         List<FileModel> pngImage =
             filelist.where((f) => f.fileUrl.path.endsWith('.png')).toList();
-             List finalvideos1 = videos.map((e) =>               
-              GenThumbnailImage(
-                fileModel: FileModel(fileUrl: e.fileUrl, hold: false),
-              thumbnailRequest: ThumbnailRequest(
-              video: e.fileUrl.path,
-              thumbnailPath: _tempDir,
-              imageFormat: _format,
-              maxHeight: 0,
-              maxWidth: 0,
-              timeMs: _timeMs,
-              quality: _quality))
-              ).toList();
+
         var imageList = jpgImage + pngImage;        
         getIt<SaverProvider>().updateImage(imageList, 'image');  
         getIt<SaverProvider>().updateImage(videos, 'video');  
                          
-        setState(() {          
-           finalvideos = finalvideos1;
+        setState(() {     
+          videoList = videos;   
+          //  finalvideos = finalvideos1;
           imagesList = jpgImage + pngImage;
           loading = false;
         });
@@ -148,7 +130,11 @@ class _MyHomePageState extends State<MyHomePage> {
           appBar: saverProvider.imagefilesSaved.isEmpty?
            AppBar(
             bottom: TabBar(
-              onTap: (index) {},
+              
+              onTap: (index) {
+                print(index);
+                print('yayaya');
+              },
               tabs: [
                 Tab(icon: Icon(LineIcons.image)),
                 Tab(icon: Icon(LineIcons.video)),
@@ -268,21 +254,91 @@ class _MyHomePageState extends State<MyHomePage> {
                               
                               getFilePath(WhatsAppType.WhatsApp);
                             },
-                      child: GridView.count(
-                          crossAxisCount: 2,
-                          physics: BouncingScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          addAutomaticKeepAlives: true,
-                          children: List.generate(finalvideos.length, (index) {
-                            return (finalvideos != null) ? Stack(
-                              children: [
-                                // Container(color: Colors.red, height: 100,width: 50,),
-                                finalvideos[index],
-                              ],
-                            ) : Text('Loading...');
+                      child: GridView.count(                               
+                            crossAxisCount: 2 ,
+                            mainAxisSpacing: 5,
+                            crossAxisSpacing: 5,
+                            childAspectRatio: 0.8,
+                            physics: BouncingScrollPhysics(),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 10),
+                          children: List.generate(videoList.length, (index) {
+                            return (videoList != null) ? 
+                            GestureDetector(
+                              onLongPress: (){
+                                saverProvider.removeImageFilesToSave();
+                                setState(() {
+                                videoList[index].hold = !videoList[index].hold;                                  
+                                });
+                                
+                              },
+                                  onTap: (){  
+                                    
+                                    if(videoList.any((element) => element.hold == true)){
+                                      setState(() {
+                                      videoList[index].hold = !videoList[index].hold;                                     
+                                    });
+                                    }else{
+                                       setState(() {
+                                        videoList[index].hold = false;                                  
+                                        });
+                                          Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                          builder: (context) => 
+                                          VideoItem(FileModel(fileUrl: videoList[index].fileUrl, hold: false)),
+                                          ));
+                                    }
+
+                                      },
+                              child: 
+
+Stack(
+  children: [
+    Positioned(child:       Container(
+                                margin: EdgeInsets.all(10),
+                                
+                                 child: FutureBuilder(
+                                   initialData: Center(child: Text('Loading')),
+                                   future: getThumbnail(videoList[index].fileUrl.path) ,
+                                   builder: (context, snapshot){
+                                   if(snapshot.hasData){
+                                    return Container(
+                                     decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: MemoryImage(snapshot.data),
+                                    fit: BoxFit.cover
+                                    ),
+                                    borderRadius: BorderRadius.circular(10)
+                                  
+                                ),
+                                    );
+                                   }else{
+                                     return Text('No data');
+                                   }
+                                 },),
+                                // child: finalvideos[index],
+                              ),
+                            ),
+
+                            Positioned(
+                              top: 65,
+                              right: 65,
+                              child: Icon(Icons.play_arrow, size: 45, color: Colors.black,)),
+                              videoList[index].hold ?
+                              Positioned(child: Container(
+                                //height: 150,
+                                color: Color.fromRGBO(124,252,0,.4),
+                              )): SizedBox()
+  ],
+))
+
+
+                             : Text('Loading...')
+                             ;
                           }),
-                        ),)
+                        )
+                        ,)
                       
             ],
           ),

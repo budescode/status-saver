@@ -40,13 +40,17 @@ class _DownloadsState extends State<Downloads> {
 
   String _tempDir;
   
-  List <GenThumbnailImage> finalvideos;
-  List<FileModel> allVideos;
-   ImageFormat _format = ImageFormat.JPEG;
-  int _quality = 50;
-  int _sizeH = 0;
-  int _sizeW = 0;
-  int _timeMs = 0;
+  Future getThumbnail(String str) async {
+  final uint8list = await VideoThumbnail.thumbnailData(
+  video: str,
+  imageFormat: ImageFormat.JPEG,
+  maxWidth: 128, // specify the width of the thumbnail, let the height auto-scaled to keep the source aspect ratio
+  quality: 25,
+  );
+  return uint8list;
+  }
+  List<FileModel> videoList;
+  
 
 
   // List<FileSystemEntity> videosList;
@@ -82,24 +86,24 @@ class _DownloadsState extends State<Downloads> {
             theFile1.where((f) => f.path.endsWith('.jpg')).toList();
         List<FileSystemEntity> pngImage =
             theFile1.where((f) => f.path.endsWith('.png')).toList();
-             List finalvideos1 = videos.map((e) =>               
-              GenThumbnailImage(
-                fileModel: e,
-              thumbnailRequest: ThumbnailRequest(
+            //  List finalvideos1 = videos.map((e) =>               
+            //   GenThumbnailImage(
+            //     fileModel: e,
+            //   thumbnailRequest: ThumbnailRequest(
                 
-              video: e.fileUrl.path,
-              thumbnailPath: _tempDir,
-              imageFormat: _format,
-              maxHeight: _sizeH,
-              maxWidth: _sizeW,
-              timeMs: _timeMs,
-              quality: _quality))
-              ).toList();
+            //   video: e.fileUrl.path,
+            //   thumbnailPath: _tempDir,
+            //   imageFormat: _format,
+            //   maxHeight: _sizeH,
+            //   maxWidth: _sizeW,
+            //   timeMs: _timeMs,
+            //   quality: _quality))
+            //   ).toList();
                          
         setState(() {          
-           finalvideos = finalvideos1;
+          //  finalvideos = finalvideos1;
           imagesList = jpgImage + pngImage;
-          allVideos = videos; // videos with videomodel
+          videoList = videos; // videos with videomodel
           loading = false;
         });
       } else {
@@ -203,28 +207,75 @@ class _DownloadsState extends State<Downloads> {
                   ? Center(child: CircularProgressIndicator())
                   : emptyState
                       ? _EmptyView():
-                      
-                      GridView.count(
-                          crossAxisCount: 2,
-                          physics: BouncingScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          addAutomaticKeepAlives: true,
-                          children: List.generate(finalvideos.length, (index) {
-                            return (finalvideos != null) ? GestureDetector(
-                              onTap: (){                                        
-                                  Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                  builder: (context) => 
-                                  VideoItem(allVideos[index]),
-                                  ));
-                              },
-                              child: finalvideos[index]) : Text('Loading...');
+
+GridView.count(                               
+                            crossAxisCount: 2 ,
+                            mainAxisSpacing: 5,
+                            crossAxisSpacing: 5,
+                            childAspectRatio: 0.8,
+                            physics: BouncingScrollPhysics(),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 10),
+                          children: List.generate(videoList.length, (index) {
+                            return (videoList != null) ? 
+                            GestureDetector(
+                                  onTap: (){                                
+                                          Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                          builder: (context) => 
+                                          VideoItem(FileModel(fileUrl: videoList[index].fileUrl, hold: false)),
+                                          ));
+                                      },
+                              child: 
+
+Stack(
+  children: [
+    Positioned(child: 
+    
+    
+                                  Container(
+                                margin: EdgeInsets.all(10),
+                                // height: 150,
+                                // width: 150,                                
+                                 child: FutureBuilder(
+                                   initialData: Center(child: Text('Loading')),
+                                   future: getThumbnail(videoList[index].fileUrl.path) ,
+                                   builder: (context, snapshot){
+                                   if(snapshot.hasData){
+                                    return Container(
+                                //        height: 150,
+                                // width: 150,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: MemoryImage(snapshot.data),
+                                    fit: BoxFit.cover
+                                    ),
+                                    borderRadius: BorderRadius.circular(10)
+                                  
+                                ),
+                                    );
+                                   }else{
+                                     return Text('No data');
+                                   }
+                                 },),
+                                // child: finalvideos[index],
+                              ),
+                            ),
+
+                            Positioned(
+                              top: 65,
+                              right: 65,
+                              child: Icon(Icons.play_arrow, size: 45, color: Colors.black,))
+  ],
+))
+
+
+                             : Text('Loading...')
+                             ;
                           }),
-                        ),
-                      
-            ],
+                        )
+      ],
           ),
         ),
       ),

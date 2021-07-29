@@ -128,6 +128,8 @@ removeData(SaverProvider saverProvider, FileModel file)async { //remove data fro
         if (snapshot.hasData) {
          
           final _image = snapshot.data.image;
+          print(_image.runtimeType);
+          print('type naaa');
 
           final _width = snapshot.data.width;
           final _height = snapshot.data.height;
@@ -154,27 +156,27 @@ removeData(SaverProvider saverProvider, FileModel file)async { //remove data fro
         });
         }
       },
-      onTap: () async {
-      if(saverProvider.imagefilesSaved.isEmpty == true){
-        Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => VideoItem(widget.fileModel),
-            ),
-          );
-      }else{
-        if(widget.fileModel.hold == false){
-          //await saveData(saverProvider, widget.fileModel);
-        setState(() {
-          widget.fileModel.hold = true ;
-        });
-        }else{
-         // await removeData(saverProvider, widget.fileModel);
-        setState(() {
-          widget.fileModel.hold = false ;
-        });
-        }
-      }
-      },
+      // onTap: () async {
+      // if(saverProvider.imagefilesSaved.isEmpty == true){
+      //   Navigator.of(context).push(
+      //       MaterialPageRoute(
+      //         builder: (_) => VideoItem(widget.fileModel),
+      //       ),
+      //     );
+      // }else{
+      //   if(widget.fileModel.hold == false){
+      //     //await saveData(saverProvider, widget.fileModel);
+      //   setState(() {
+      //     widget.fileModel.hold = true ;
+      //   });
+      //   }else{
+      //    // await removeData(saverProvider, widget.fileModel);
+      //   setState(() {
+      //     widget.fileModel.hold = false ;
+      //   });
+      //   }
+      // }
+      // },
                               // onTap: (){                                
                               //     Navigator.push(
                               //     context,

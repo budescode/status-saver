@@ -16,8 +16,13 @@ List<FileModel> fileModelImageList;
 List<FileModel> imagefilesSaved = []; //list of files to be saved
 List<FileModel> fileModelVideoList;
 List<FileModel> videofilesSaved = []; //list of files to be saved
+List<Widget> videolistshow = [];
 String selected; //video or image selected
 
+updateVideo(List vide){
+  videolistshow = vide;
+  notifyListeners();
+}
 checkPermission() async {
   var storageStatus = await Permission.storage.status;
   if (storageStatus != true){
@@ -40,6 +45,10 @@ Fluttertoast.showToast(
   );
 }
 
+removeImageFilesToSave(){
+  imagefilesSaved = [];
+  notifyListeners();
+}
 updateimagefilesSaved(List<FileModel> fileList, String datatype){
   if(datatype=='image'){
   imagefilesSaved = fileList;

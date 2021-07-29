@@ -37,7 +37,9 @@ class _VideoItemState extends State<VideoItem> {
   }
   @override
   void initState(){     
-_controller = ChewieController(
+     VideoPlayerController videoPlayerController = VideoPlayerController.file(File(widget.fileModel.fileUrl.path));
+        _controller = ChewieController(
+            aspectRatio: videoPlayerController.value.aspectRatio,
               autoPlay: true,
               fullScreenByDefault: false,
               autoInitialize: true,
@@ -59,7 +61,7 @@ _controller = ChewieController(
     super.initState();
   }
 ChewieController _controller;
-
+//VideoPlayerController _videoPlayerController;
   @override
   void dispose() {
     _controller.pause();
@@ -89,6 +91,7 @@ ChewieController _controller;
         drawer: myDrawer(context),
         body: Center(
           child: Chewie(
+            
             controller: _controller
           ),
         ),
